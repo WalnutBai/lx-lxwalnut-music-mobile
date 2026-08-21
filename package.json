@@ -1,7 +1,7 @@
 {
   "name": "lx-lxwalnut-music-mobile",
-  "version": "26.08.08",
-  "versionCode": 260808,
+  "version": "26.08.19",
+  "versionCode": 260819,
   "private": true,
   "scripts": {
     "dev": "react-native run-android --active-arch-only",
@@ -19,7 +19,7 @@
     "clear:full": "git clean -fdx -e android/keystore.properties -e android/app/*.keystore -e scripts/rntp-eq",
     "build:theme": "node src/theme/themes/createThemes.js",
     "publish": "node publish",
-    "postinstall": "node patchMediaLayout.js && node scripts/apply-rntp-eq-patch.js && node scripts/apply-slider-patch.js"
+    "postinstall": "node patchMediaLayout.js && node scripts/apply-rntp-eq-patch.js && node scripts/apply-slider-patch.js && node scripts/apply-file-system-multi-patch.js"
   },
   "engines": {
     "node": ">= 18",
