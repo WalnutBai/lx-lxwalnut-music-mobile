@@ -631,7 +631,7 @@ const Main = () => {
   }, [pageNavs]);
 
   return (
-    <View style={styles.container} {...drawerPanResponder.panHandlers}>
+    <View style={styles.container} collapsable={false} {...drawerPanResponder.panHandlers}>
       <PagerView
         ref={pagerViewRef}
         initialPage={activeIndexRef.current}
