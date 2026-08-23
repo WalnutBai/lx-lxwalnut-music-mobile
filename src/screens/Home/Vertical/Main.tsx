@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from 'react'
-import {Keyboard, PanResponder, View} from 'react-native'
+import {Keyboard, View} from 'react-native'
 import Search from '../Views/Search'
 import SongList from '../Views/SongList'
 import Mylist from '../Views/Mylist'
@@ -11,6 +11,7 @@ import PagerView, {
   type PageScrollStateChangedNativeEvent,
   type PagerViewOnPageSelectedEvent,
 } from 'react-native-pager-view'
+import { GestureHandlerRootView, PanGestureHandler, State as GestureState } from 'react-native-gesture-handler'
 import { setNavActiveId } from '@/core/common'
 import settingState from '@/store/setting/state'
 import DailyRec from '../Views/DailyRec'
@@ -513,30 +514,6 @@ const Main = () => {
     return navOrder.filter(id => id !== 'nav_play_history')
   }, [navOrder])
 
-  // 每个页面容器自己的 PanResponder,直接在 PagerView 内部识别右滑,
-  // 避免被 PagerView 原生视图拦截后外层手势全部失效
-  const pagePanResponders = useMemo(() => {
-    const map: Partial<Record<NAV_ID_Type, ReturnType<typeof PanResponder.create>>> = {}
-    for (const id of pageNavs) {
-      map[id] = PanResponder.create({
-        onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
-          const { dx, dy } = gestureState
-          return Math.abs(dx) > Math.abs(dy) && dx > 12
-        },
-        onMoveShouldSetPanResponder: (evt, gestureState) => {
-          const { dx, dy } = gestureState
-          return Math.abs(dx) > Math.abs(dy) && dx > 12
-        },
-        onPanResponderRelease: (evt, gestureState) => {
-          if (gestureState.dx > 40) {
-            global.app_event.changeMenuVisible(true)
-          }
-        },
-      })
-    }
-    return map
-  }, [pageNavs])
-
   const { viewMap, indexMap } = useMemo(() => {
     const viewMap: Partial<Record<NAV_ID_Type, number>> = {};
     const indexMap: NAV_ID_Type[] = [];
@@ -575,6 +552,13 @@ const Main = () => {
     },
     []
   );
+
+  const handlePanGestureState = useCallback((evt: any) => {
+    const { state, translationX } = evt.nativeEvent
+    if (state === GestureState.END && translationX > 40) {
+      global.app_event.changeMenuVisible(true)
+    }
+  }, [])
 
   // 当页面列表改变时，确保当前页索引是有效的
   useEffect(() => {
@@ -634,28 +618,35 @@ const Main = () => {
         collapsable={false}
         key={id}
         style={styles.pageStyle}
-        {...(pagePanResponders[id]?.panHandlers ?? {})}
       >
         {pageComponents[id] ?? null}
       </View>
     ));
-  }, [pageNavs, pagePanResponders]);
+  }, [pageNavs]);
 
   return (
-    <View style={styles.container} collapsable={false}>
-      <PagerView
-        ref={pagerViewRef}
-        initialPage={activeIndexRef.current}
-        offscreenPageLimit={1}
-        onPageSelected={onPageSelected}
-        onPageScrollStateChanged={onPageScrollStateChanged}
-        scrollEnabled={false}
-        style={styles.pagerView}
+    <GestureHandlerRootView style={styles.container}>
+      <PanGestureHandler
+        activeOffsetX={[12, 0]}
+        failOffsetY={[-12, 12]}
+        onHandlerStateChange={handlePanGestureState}
       >
-        {pages}
-      </PagerView>
-      <PlayHistoryOverlay />
-    </View>
+        <View style={styles.container} collapsable={false}>
+          <PagerView
+            ref={pagerViewRef}
+            initialPage={activeIndexRef.current}
+            offscreenPageLimit={1}
+            onPageSelected={onPageSelected}
+            onPageScrollStateChanged={onPageScrollStateChanged}
+            scrollEnabled={false}
+            style={styles.pagerView}
+          >
+            {pages}
+          </PagerView>
+          <PlayHistoryOverlay />
+        </View>
+      </PanGestureHandler>
+    </GestureHandlerRootView>
   );
 };
 
