@@ -50,6 +50,12 @@ export default ({ componentId }: Props) => {
 
   useBackHandler(
     useCallback(() => {
+      // 侧边栏打开时,先关闭侧边栏
+      if (global.lx.isDrawerOpen) {
+        global.app_event.changeMenuVisible(false)
+        return true
+      }
+
       if (commonState.componentIds.length > 1) {
         return false;
       }

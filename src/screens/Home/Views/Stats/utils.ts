@@ -80,13 +80,14 @@ export const getMonthDays = (monthDate: Date): MonthDay[] => {
  * @param duration 当天时长(秒)
  * @param maxDuration 满色基准(当月最大时长)
  */
-export const getClassicHeatColor = (duration: number, maxDuration: number): string => {
+export const getClassicHeatColor = (duration: number, maxDuration: number, isDark = false): string => {
   if (duration <= 0) return 'rgba(128,128,128,0.12)'
   const ratio = Math.min(1, Math.sqrt(duration / Math.max(maxDuration, 1)))
   // hue: 145(绿) -> 0(红)
   const hue = Math.round(145 - 145 * ratio)
   const sat = 65 + Math.round(20 * ratio)
-  const light = 45 - Math.round(15 * ratio)
+  // 暗色主题下高值要更亮,否则高值发黑、低值反而刺眼
+  const light = isDark ? 30 + Math.round(25 * ratio) : 45 - Math.round(15 * ratio)
   return `hsl(${hue}, ${sat}%, ${light}%)`
 }
 
@@ -111,8 +112,17 @@ const mixRgb = (base: [number, number, number], target: [number, number, number]
 /**
  * 主题色 5 级色阶(由浅到深)
  */
-export const getThemeHeatColors = (primaryColor: string): string[] => {
+export const getThemeHeatColors = (primaryColor: string, isDark = false): string[] => {
   const primary = parseRgb(primaryColor) ?? [77, 175, 124]
+  if (isDark) {
+    return [
+      mixRgb(primary, [0, 0, 0], 0.44),
+      mixRgb(primary, [0, 0, 0], 0.24),
+      mixRgb(primary, [255, 255, 255], 0),
+      mixRgb(primary, [255, 255, 255], 0.36),
+      mixRgb(primary, [255, 255, 255], 0.72),
+    ]
+  }
   return [
     mixRgb(primary, [255, 255, 255], 0.72),
     mixRgb(primary, [255, 255, 255], 0.36),
@@ -147,10 +157,10 @@ const hslToCss = (h: number, s: number, l: number) =>
  * 基于种子色生成 Material You 风格的 5 级 tonal palette(由浅到深)。
  * 种子色取当前主题色;真实 Android 12 会从壁纸提取种子色,这里用 App 主题色作为种子。
  */
-export const getMonetHeatColors = (seedColor: string): string[] => {
+export const getMonetHeatColors = (seedColor: string, isDark = false): string[] => {
   const seed = parseRgb(seedColor) ?? [77, 175, 124]
   const [h, s] = rgbToHsl(seed)
-  const tones = [90, 70, 50, 30, 10]
+  const tones = isDark ? [10, 30, 50, 70, 90] : [90, 70, 50, 30, 10]
   return tones.map((tone) => {
     const l = tone / 100
     // Material You tonal palette 在两端降饱和,中间保持较高彩度
@@ -167,12 +177,13 @@ export const getHeatColor = (
   duration: number,
   maxDuration: number,
   mode: HeatColorMode = 'classic',
-  primaryColor = 'rgb(77, 175, 124)'
+  primaryColor = 'rgb(77, 175, 124)',
+  isDark = false
 ): string => {
   if (duration <= 0) return 'rgba(128,128,128,0.12)'
-  if (mode === 'classic') return getClassicHeatColor(duration, maxDuration)
+  if (mode === 'classic') return getClassicHeatColor(duration, maxDuration, isDark)
 
-  const colors = mode === 'monet' ? getMonetHeatColors(primaryColor) : getThemeHeatColors(primaryColor)
+  const colors = mode === 'monet' ? getMonetHeatColors(primaryColor, isDark) : getThemeHeatColors(primaryColor, isDark)
   const ratio = Math.sqrt(duration / Math.max(maxDuration, 1))
   const index = Math.max(0, Math.min(colors.length - 1, Math.floor(ratio * colors.length)))
   return colors[index]

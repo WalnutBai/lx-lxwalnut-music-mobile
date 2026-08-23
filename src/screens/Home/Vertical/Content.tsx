@@ -44,6 +44,12 @@ const Content = () => {
       // drawerWidth={width}
       drawerPosition={drawerLayoutPosition}
       renderNavigationView={navigationView}
+      onDrawerOpen={() => {
+        global.lx.isDrawerOpen = true
+      }}
+      onDrawerClose={() => {
+        global.lx.isDrawerOpen = false
+      }}
     >
       <Header />
       <Main />

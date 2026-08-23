@@ -506,9 +506,11 @@ const Main = () => {
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null);
   const drawerPanResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        const { dx, dy, x0 } = gestureState
-        return Math.abs(dx) > Math.abs(dy) && dx > 12 && x0 < 60
+      // 用捕获阶段在 PagerView/ScrollView 之前识别左缘右滑,避免被子视图拦截
+      onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
+        const { dx, dy } = gestureState
+        const initialX = evt.nativeEvent.pageX - dx
+        return initialX < 40 && Math.abs(dx) > Math.abs(dy) && dx > 12
       },
       onPanResponderRelease: (evt, gestureState) => {
         if (gestureState.dx > 40) {
@@ -591,7 +593,7 @@ const Main = () => {
       }
       if (index != null && activeIndexRef.current !== index) {
         activeIndexRef.current = index;
-        pagerViewRef.current?.setPageWithoutAnimation(index);
+        pagerViewRef.current?.setPage(index);
       }
     };
     global.state_event.on('navActiveIdUpdated', handleUpdate);

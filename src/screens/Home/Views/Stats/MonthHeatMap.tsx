@@ -313,12 +313,12 @@ const MonthHeatMap = memo(({ selectedDate, onSelectDate, showDetail, onToggleDet
     let colors: string[]
     if (heatColorMode === 'classic') {
       colors = Array.from({ length: 12 }, (_, i) =>
-        getClassicHeatColor(((i + 0.5) / 12) * Math.max(maxDuration, 1), maxDuration)
+        getClassicHeatColor(((i + 0.5) / 12) * Math.max(maxDuration, 1), maxDuration, theme.isDark)
       )
     } else if (heatColorMode === 'monet') {
-      colors = getMonetHeatColors(theme['c-primary'])
+      colors = getMonetHeatColors(theme['c-primary'], theme.isDark)
     } else {
-      colors = getThemeHeatColors(theme['c-primary'])
+      colors = getThemeHeatColors(theme['c-primary'], theme.isDark)
     }
     return (
       <View style={styles.legendRow}>
@@ -366,7 +366,7 @@ const MonthHeatMap = memo(({ selectedDate, onSelectDate, showDetail, onToggleDet
                 {
                   width: cellSize,
                   height: cellSize,
-                  backgroundColor: getHeatColor(duration, maxMonthDuration, heatColorMode, theme['c-primary']),
+                  backgroundColor: getHeatColor(duration, maxMonthDuration, heatColorMode, theme['c-primary'], theme.isDark),
                   borderColor: isSelected ? theme['c-primary'] : 'transparent',
                   borderWidth: isSelected ? 2 : 0,
                   opacity: isFuture ? 0.35 : isCurrentMonth ? 1 : 0.4,
@@ -430,7 +430,7 @@ const MonthHeatMap = memo(({ selectedDate, onSelectDate, showDetail, onToggleDet
                         style={[
                           styles.gitHubCell,
                           {
-                            backgroundColor: getHeatColor(day.duration, maxYearDuration, heatColorMode, theme['c-primary']),
+                            backgroundColor: getHeatColor(day.duration, maxYearDuration, heatColorMode, theme['c-primary'], theme.isDark),
                             borderColor: isSelected ? theme['c-primary'] : isToday ? theme['c-500'] : 'transparent',
                             borderWidth: isSelected || isToday ? 1 : 0,
                             opacity: day.isFuture ? 0.35 : 1,

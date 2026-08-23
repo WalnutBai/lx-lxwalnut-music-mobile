@@ -19,6 +19,7 @@ const HeatMonthCard = memo(
     visible,
     colorMode,
     primaryColor,
+    isDark,
   }: {
     monthName: string
     monthDate: Date
@@ -28,6 +29,7 @@ const HeatMonthCard = memo(
     visible: boolean
     colorMode: LX.AppSetting['stats.heatColorMode']
     primaryColor: string
+    isDark: boolean
   }) => {
     const theme = useTheme()
     const anim = useRef(new Animated.Value(0)).current
@@ -69,7 +71,7 @@ const HeatMonthCard = memo(
                 style={[
                   styles.heatDayCell,
                   {
-                    backgroundColor: isCurrentMonth ? getHeatColor(duration, maxDayDuration, colorMode, primaryColor) : 'transparent',
+                    backgroundColor: isCurrentMonth ? getHeatColor(duration, maxDayDuration, colorMode, primaryColor, isDark) : 'transparent',
                     borderColor: isToday ? theme['c-primary'] : 'transparent',
                     borderWidth: isToday ? 1 : 0,
                   },
@@ -211,6 +213,7 @@ const YearOverview = memo(() => {
               visible={monthIndex < visibleMonths}
               colorMode={heatColorMode}
               primaryColor={theme['c-primary']}
+              isDark={theme.isDark}
             />
           )
         })}

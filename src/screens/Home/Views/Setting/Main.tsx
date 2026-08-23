@@ -220,6 +220,22 @@ const SettingsView = forwardRef<MainType, SettingsViewProps>(({ showCategoryNav 
   const [showTop, setShowTop] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
   const topBtnOpacity = useRef(new Animated.Value(0)).current
+  const contentOpacity = useRef(new Animated.Value(1)).current
+
+  const animateContentSwitch = useCallback((update: () => void) => {
+    Animated.timing(contentOpacity, {
+      toValue: 0,
+      duration: 90,
+      useNativeDriver: true,
+    }).start(() => {
+      update()
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 140,
+        useNativeDriver: true,
+      }).start()
+    })
+  }, [contentOpacity])
 
   useImperativeHandle(ref, () => ({
     setActiveId(id) {
@@ -242,13 +258,16 @@ const SettingsView = forwardRef<MainType, SettingsViewProps>(({ showCategoryNav 
       }
       // 竖屏子级设置页:先退回父级分组列表
       if (showCategoryNav && activeId) {
-        setActiveId(null)
+        animateContentSwitch(() => {
+          setActiveId(null)
+          setSearchText('')
+        })
         return true
       }
       // 设置根级:返回进入设置前的页面
       setNavActiveId(commonState.lastNavActiveId)
       return true
-    }, [searchText, showCategoryNav, activeId])
+    }, [searchText, showCategoryNav, activeId, animateContentSwitch])
   )
 
   useEffect(() => {
@@ -260,11 +279,13 @@ const SettingsView = forwardRef<MainType, SettingsViewProps>(({ showCategoryNav 
   }, [showTop, topBtnOpacity])
 
   const handleSelectCategory = useCallback((id: SettingScreenIds) => {
-    setActiveId(id)
-    setSearchText('')
-    global.lx.settingActiveId = id
-    scrollRef.current?.scrollTo({ y: 0, animated: false })
-  }, [])
+    animateContentSwitch(() => {
+      setActiveId(id)
+      setSearchText('')
+      global.lx.settingActiveId = id
+      scrollRef.current?.scrollTo({ y: 0, animated: false })
+    })
+  }, [animateContentSwitch])
 
   const query = searchText.trim().toLowerCase()
 
@@ -371,31 +392,38 @@ const SettingsView = forwardRef<MainType, SettingsViewProps>(({ showCategoryNav 
         ) : null}
       </View>
 
-      {showCategoryNav && activeId && !query ? (
-        <View style={[styles.subHeader, { borderBottomColor: theme['c-border-background'] }]}>
-          <TouchableOpacity style={styles.subHeaderBack} onPress={() => { setActiveId(null); setSearchText('') }}>
-            <Text size={15} color={theme['c-primary']}>‹ 返回</Text>
-          </TouchableOpacity>
-          <Text size={16} color={theme['c-font']} style={styles.subHeaderTitle} numberOfLines={1}>
-            {t(`setting_${activeId}`)}
-          </Text>
-          <View style={styles.subHeaderPlaceholder} />
-        </View>
-      ) : null}
+      <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
+        {showCategoryNav && activeId && !query ? (
+          <View style={[styles.subHeader, { borderBottomColor: theme['c-border-background'] }]}>
+            <TouchableOpacity style={styles.subHeaderBack} onPress={() => {
+              animateContentSwitch(() => {
+                setActiveId(null)
+                setSearchText('')
+              })
+            }}>
+              <Text size={15} color={theme['c-primary']}>‹ 返回</Text>
+            </TouchableOpacity>
+            <Text size={16} color={theme['c-font']} style={styles.subHeaderTitle} numberOfLines={1}>
+              {t(`setting_${activeId}`)}
+            </Text>
+            <View style={styles.subHeaderPlaceholder} />
+          </View>
+        ) : null}
 
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="always"
-        scrollEventThrottle={16}
-        onScroll={(event) => {
-          const y = event.nativeEvent.contentOffset.y
-          setShowTop(y > 200)
-        }}
-      >
-        {query ? renderSearchContent() : activeId ? renderCategoryContent() : renderRootList()}
-      </ScrollView>
+        <ScrollView
+          ref={scrollRef}
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="always"
+          scrollEventThrottle={16}
+          onScroll={(event) => {
+            const y = event.nativeEvent.contentOffset.y
+            setShowTop(y > 200)
+          }}
+        >
+          {query ? renderSearchContent() : activeId ? renderCategoryContent() : renderRootList()}
+        </ScrollView>
+      </Animated.View>
 
       <Animated.View
         style={[styles.topBtn, { opacity: topBtnOpacity }]}

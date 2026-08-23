@@ -43,6 +43,8 @@ interface GlobalData {
 
   settingActiveId: SettingScreenIds
 
+  isDrawerOpen: boolean
+
   /**
    * 首页是否正在滚动中，用于防止意外误触播放歌曲
    */

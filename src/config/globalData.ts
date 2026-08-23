@@ -60,6 +60,8 @@ global.lx = {
 
   settingActiveId: 'basic',
 
+  isDrawerOpen: false,
+
   homePagerIdle: true,
 
   // syncKeyInfo: initValue as LX.Sync.KeyInfo,
@@ -74,7 +76,7 @@ global.lx = {
   // },
 }
 
-global.app_event = createAppEventHub()
+global.app_event = createAppEventHub() as typeof global.app_event
 global.list_event = createListEventHub()
 global.dislike_event = createDislikeEventHub()
 global.state_event = createStateEventHub()
