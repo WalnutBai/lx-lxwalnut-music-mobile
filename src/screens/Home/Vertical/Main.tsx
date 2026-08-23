@@ -502,37 +502,24 @@ const SettingPage = () => {
   return visible ? component : null
 }
 
-const PageGestureWrapper = ({ children }: { children: ReactNode }) => {
-  const touchStartRef = useRef({ x: 0, y: 0 });
+const Main = () => {
+  const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null);
+  const pageTouchStartRef = useRef({ x: 0, y: 0 });
 
-  const handleTouchStart = useCallback((evt: any) => {
+  const handlePageTouchStart = useCallback((evt: any) => {
     const t = evt.nativeEvent?.changedTouches?.[0] ?? evt.nativeEvent
-    touchStartRef.current = { x: t.pageX, y: t.pageY }
+    pageTouchStartRef.current = { x: t.pageX, y: t.pageY }
   }, [])
 
-  const handleTouchEnd = useCallback((evt: any) => {
+  const handlePageTouchEnd = useCallback((evt: any) => {
     const t = evt.nativeEvent?.changedTouches?.[0] ?? evt.nativeEvent
-    const dx = t.pageX - touchStartRef.current.x
-    const dy = t.pageY - touchStartRef.current.y
+    const dx = t.pageX - pageTouchStartRef.current.x
+    const dy = t.pageY - pageTouchStartRef.current.y
     if (Math.abs(dx) > Math.abs(dy) && dx > 50) {
       global.app_event.changeMenuVisible(true)
     }
   }, [])
 
-  return (
-    <View
-      style={styles.pageStyle}
-      collapsable={false}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      {children}
-    </View>
-  )
-}
-
-const Main = () => {
-  const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null);
   const [activeNavId, setActiveNavIdState] = useState(commonState.navActiveId)
   const navOrder = useSettingValue('common.navOrder'); // 获取菜单排序
 
@@ -635,11 +622,17 @@ const Main = () => {
     };
 
     return pageNavs.map(id => (
-      <PageGestureWrapper key={id}>
+      <View
+        collapsable={false}
+        key={id}
+        style={styles.pageStyle}
+        onTouchStart={handlePageTouchStart}
+        onTouchEnd={handlePageTouchEnd}
+      >
         {pageComponents[id] ?? null}
-      </PageGestureWrapper>
+      </View>
     ));
-  }, [pageNavs]);
+  }, [pageNavs, handlePageTouchStart, handlePageTouchEnd]);
 
   return (
     <View style={styles.container} collapsable={false}>
