@@ -628,7 +628,7 @@ const Main = () => {
     <GestureHandlerRootView style={styles.container}>
       <PanGestureHandler
         activeOffsetX={[12, 0]}
-        failOffsetY={[-12, 12]}
+        failOffsetY={[-4, 4]}
         onHandlerStateChange={handlePanGestureState}
       >
         <View style={styles.container} collapsable={false}>
