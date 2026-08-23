@@ -1,0 +1,44 @@
+name: Release Arm64
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Android arm64-v8a Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v4
+
+      - name: Setup Env
+        uses: ./.github/actions/setup
+
+      - name: Build arm64-v8a Release
+        env:
+          DISABLE_SVG: 1
+        shell: bash
+        run: |
+          cd android
+          echo ${{ secrets.MYAPP_KEYSTORE_BASE64 }} | base64 --decode > app/${{ secrets.MYAPP_UPLOAD_STORE_FILE }}
+          chmod +x ./gradlew
+          ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a \
+            -PMYAPP_UPLOAD_STORE_FILE='${{ secrets.MYAPP_UPLOAD_STORE_FILE }}' \
+            -PMYAPP_UPLOAD_KEY_ALIAS='${{ secrets.MYAPP_UPLOAD_KEY_ALIAS }}' \
+            -PMYAPP_UPLOAD_STORE_PASSWORD='${{ secrets.MYAPP_UPLOAD_STORE_PASSWORD }}' \
+            -PMYAPP_UPLOAD_KEY_PASSWORD='${{ secrets.MYAPP_UPLOAD_KEY_PASSWORD }}'
+          rm -f app/${{ secrets.MYAPP_UPLOAD_STORE_FILE }}
+
+      - name: Get package version
+        id: package_version
+        shell: bash
+        run: |
+          PACKAGE_VERSION=$(node -p -e 'require("./package.json").version')
+          echo "PACKAGE_VERSION=${PACKAGE_VERSION}" >> "$GITHUB_ENV"
+          echo "package_version=${PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload arm64-v8a Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-v${{ env.PACKAGE_VERSION }}-arm64-v8a-release
+          path: android/app/build/outputs/apk/release/*-arm64-v8a.apk
