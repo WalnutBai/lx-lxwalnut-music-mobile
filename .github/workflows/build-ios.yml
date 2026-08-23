@@ -1,0 +1,61 @@
+name: Build iOS (unsigned)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ios-port
+
+jobs:
+  build:
+    name: Build unsigned IPA
+    runs-on: macos-latest
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        # Runs the postinstall patches (react-native-track-player eq patch,
+        # slider patch, file-system multi patch) exactly like the Android CI.
+        shell: bash
+        run: npm ci
+
+      - name: Get package version
+        id: pkg_version
+        shell: bash
+        run: echo "PACKAGE_VERSION=$(node -p -e 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+
+      - name: Install CocoaPods dependencies
+        shell: bash
+        run: cd ios && pod install --repo-update
+
+      - name: Build unsigned archive
+        shell: bash
+        run: |
+          cd ios
+          xcodebuild -workspace LXMusic.xcworkspace -scheme LXMusic \
+            -sdk iphoneos -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$PWD/build/LXMusic.xcarchive" \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            build archive
+
+      - name: Package unsigned IPA
+        shell: bash
+        run: |
+          cd ios/build
+          mkdir -p Payload
+          cp -r LXMusic.xcarchive/Products/Applications/LXMusic.app Payload/
+          zip -r LXMusic-unsigned.ipa Payload
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: LXMusic-unsigned-${{ steps.pkg_version.outputs.PACKAGE_VERSION }}
+          path: ios/build/LXMusic-unsigned.ipa
+          if-no-files-found: error
