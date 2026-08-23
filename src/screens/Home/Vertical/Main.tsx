@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from 'react'
-import {Keyboard, View} from 'react-native'
+import {Keyboard, PanResponder, View} from 'react-native'
 import Search from '../Views/Search'
 import SongList from '../Views/SongList'
 import Mylist from '../Views/Mylist'
@@ -504,22 +504,6 @@ const SettingPage = () => {
 
 const Main = () => {
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null);
-  const pageTouchStartRef = useRef({ x: 0, y: 0 });
-
-  const handlePageTouchStart = useCallback((evt: any) => {
-    const t = evt.nativeEvent?.changedTouches?.[0] ?? evt.nativeEvent
-    pageTouchStartRef.current = { x: t.pageX, y: t.pageY }
-  }, [])
-
-  const handlePageTouchEnd = useCallback((evt: any) => {
-    const t = evt.nativeEvent?.changedTouches?.[0] ?? evt.nativeEvent
-    const dx = t.pageX - pageTouchStartRef.current.x
-    const dy = t.pageY - pageTouchStartRef.current.y
-    if (Math.abs(dx) > Math.abs(dy) && dx > 50) {
-      global.app_event.changeMenuVisible(true)
-    }
-  }, [])
-
   const [activeNavId, setActiveNavIdState] = useState(commonState.navActiveId)
   const navOrder = useSettingValue('common.navOrder'); // 获取菜单排序
 
@@ -528,6 +512,26 @@ const Main = () => {
   const pageNavs = useMemo(() => {
     return navOrder.filter(id => id !== 'nav_play_history')
   }, [navOrder])
+
+  // 每个页面容器自己的 PanResponder,直接在 PagerView 内部识别右滑,
+  // 避免被 PagerView 原生视图拦截后外层手势全部失效
+  const pagePanResponders = useMemo(() => {
+    const map: Partial<Record<NAV_ID_Type, ReturnType<typeof PanResponder.create>>> = {}
+    for (const id of pageNavs) {
+      map[id] = PanResponder.create({
+        onMoveShouldSetPanResponder: (evt, gestureState) => {
+          const { dx, dy } = gestureState
+          return Math.abs(dx) > Math.abs(dy) && dx > 12
+        },
+        onPanResponderRelease: (evt, gestureState) => {
+          if (gestureState.dx > 40) {
+            global.app_event.changeMenuVisible(true)
+          }
+        },
+      })
+    }
+    return map
+  }, [pageNavs])
 
   const { viewMap, indexMap } = useMemo(() => {
     const viewMap: Partial<Record<NAV_ID_Type, number>> = {};
@@ -626,13 +630,12 @@ const Main = () => {
         collapsable={false}
         key={id}
         style={styles.pageStyle}
-        onTouchStart={handlePageTouchStart}
-        onTouchEnd={handlePageTouchEnd}
+        {...(pagePanResponders[id]?.panHandlers ?? {})}
       >
         {pageComponents[id] ?? null}
       </View>
     ));
-  }, [pageNavs, handlePageTouchStart, handlePageTouchEnd]);
+  }, [pageNavs, pagePanResponders]);
 
   return (
     <View style={styles.container} collapsable={false}>
