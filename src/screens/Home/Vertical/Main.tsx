@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from 'react'
-import {Keyboard, PanResponder, View} from 'react-native'
+import {Keyboard, View} from 'react-native'
 import Search from '../Views/Search'
 import SongList from '../Views/SongList'
 import Mylist from '../Views/Mylist'
@@ -504,24 +504,21 @@ const SettingPage = () => {
 
 const Main = () => {
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null);
-  const drawerPanResponder = useRef(
-    PanResponder.create({
-      // 任意位置向右横向滑动都可打开侧边栏,不再限制左缘起手
-      onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
-        const { dx, dy } = gestureState
-        return Math.abs(dx) > Math.abs(dy) && dx > 12
-      },
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        const { dx, dy } = gestureState
-        return Math.abs(dx) > Math.abs(dy) && dx > 12
-      },
-      onPanResponderRelease: (evt, gestureState) => {
-        if (gestureState.dx > 40) {
-          global.app_event.changeMenuVisible(true)
-        }
-      },
-    })
-  ).current;
+  const touchStartRef = useRef({ x: 0, y: 0 });
+
+  const handleTouchStart = useCallback((evt: any) => {
+    const t = evt.nativeEvent?.changedTouches?.[0] ?? evt.nativeEvent
+    touchStartRef.current = { x: t.pageX, y: t.pageY }
+  }, [])
+
+  const handleTouchEnd = useCallback((evt: any) => {
+    const t = evt.nativeEvent?.changedTouches?.[0] ?? evt.nativeEvent
+    const dx = t.pageX - touchStartRef.current.x
+    const dy = t.pageY - touchStartRef.current.y
+    if (Math.abs(dx) > Math.abs(dy) && dx > 50) {
+      global.app_event.changeMenuVisible(true)
+    }
+  }, [])
   const [activeNavId, setActiveNavIdState] = useState(commonState.navActiveId)
   const navOrder = useSettingValue('common.navOrder'); // 获取菜单排序
 
@@ -631,7 +628,12 @@ const Main = () => {
   }, [pageNavs]);
 
   return (
-    <View style={styles.container} collapsable={false} {...drawerPanResponder.panHandlers}>
+    <View
+      style={styles.container}
+      collapsable={false}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <PagerView
         ref={pagerViewRef}
         initialPage={activeIndexRef.current}
