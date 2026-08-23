@@ -506,11 +506,14 @@ const Main = () => {
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null);
   const drawerPanResponder = useRef(
     PanResponder.create({
-      // 用捕获阶段在 PagerView/ScrollView 之前识别左缘右滑,避免被子视图拦截
+      // 任意位置向右横向滑动都可打开侧边栏,不再限制左缘起手
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
         const { dx, dy } = gestureState
-        const initialX = evt.nativeEvent.pageX - dx
-        return initialX < 40 && Math.abs(dx) > Math.abs(dy) && dx > 12
+        return Math.abs(dx) > Math.abs(dy) && dx > 12
+      },
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        const { dx, dy } = gestureState
+        return Math.abs(dx) > Math.abs(dy) && dx > 12
       },
       onPanResponderRelease: (evt, gestureState) => {
         if (gestureState.dx > 40) {
