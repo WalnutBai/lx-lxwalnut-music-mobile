@@ -1,7 +1,7 @@
 // import './app_setting'
 
 declare namespace LX {
-  type OnlineSource = 'kw' | 'kg' | 'tx' | 'wy' | 'mg' | 'git'
+  type OnlineSource = 'kw' | 'kg' | 'tx' | 'wy' | 'mg' | 'git' | 'bi'
   type Source = OnlineSource | 'local'
   type Quality = '128k' | '320k' | 'flac' | 'hires' | 'atmos' | 'atmos_plus' | 'master'
   type QualityList = Partial<Record<LX.Source, LX.Quality[]>>

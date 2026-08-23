@@ -73,7 +73,7 @@ declare namespace LX {
       meta: MusicInfoMeta_local
     }
 
-    interface MusicInfo_online_common extends MusicInfoBase<'kw' | 'wy' | 'git'> {
+    interface MusicInfo_online_common extends MusicInfoBase<'kw' | 'wy' | 'git' | 'bi'> {
       meta: MusicInfoMeta_online
     }
 

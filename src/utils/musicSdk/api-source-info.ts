@@ -12,6 +12,14 @@ const sources: Array<{
   //     kw: ['128k', '320k', 'flac', 'hires'],
   //   },
   // },
+  {
+    id: 'bi',
+    name: '小哔音乐',
+    disabled: false,
+    supportQualitys: {
+      bi: ['128k', '320k'],
+    },
+  },
 ]
 
 export default sources
