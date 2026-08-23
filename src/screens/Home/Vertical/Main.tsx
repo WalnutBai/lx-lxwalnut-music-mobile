@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from 'react'
-import {Keyboard, View} from 'react-native'
+import {Animated, Keyboard, View} from 'react-native'
 import Search from '../Views/Search'
 import SongList from '../Views/SongList'
 import Mylist from '../Views/Mylist'
@@ -505,6 +505,7 @@ const SettingPage = () => {
 
 const Main = () => {
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null);
+  const pageTransitionAnim = useRef(new Animated.Value(1)).current;
   const [activeNavId, setActiveNavIdState] = useState(commonState.navActiveId)
   const navOrder = useSettingValue('common.navOrder'); // 获取菜单排序
 
@@ -585,8 +586,20 @@ const Main = () => {
         index = 0;
       }
       if (index != null && activeIndexRef.current !== index) {
+        const distance = Math.abs(index - activeIndexRef.current);
         activeIndexRef.current = index;
-        pagerViewRef.current?.setPage(index);
+        if (distance <= 1) {
+          pagerViewRef.current?.setPage(index);
+        } else {
+          // 跨多页跳转不要翻遍中间页,直接定位并用轻量滑动渐显过渡
+          pageTransitionAnim.setValue(0);
+          pagerViewRef.current?.setPageWithoutAnimation(index);
+          Animated.timing(pageTransitionAnim, {
+            toValue: 1,
+            duration: 220,
+            useNativeDriver: true,
+          }).start();
+        }
       }
     };
     global.state_event.on('navActiveIdUpdated', handleUpdate);
@@ -632,17 +645,34 @@ const Main = () => {
         onHandlerStateChange={handlePanGestureState}
       >
         <View style={styles.container} collapsable={false}>
-          <PagerView
-            ref={pagerViewRef}
-            initialPage={activeIndexRef.current}
-            offscreenPageLimit={1}
-            onPageSelected={onPageSelected}
-            onPageScrollStateChanged={onPageScrollStateChanged}
-            scrollEnabled={false}
-            style={styles.pagerView}
+          <Animated.View
+            style={[
+              styles.pagerView,
+              {
+                opacity: pageTransitionAnim,
+                transform: [
+                  {
+                    translateX: pageTransitionAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [24, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
           >
-            {pages}
-          </PagerView>
+            <PagerView
+              ref={pagerViewRef}
+              initialPage={activeIndexRef.current}
+              offscreenPageLimit={1}
+              onPageSelected={onPageSelected}
+              onPageScrollStateChanged={onPageScrollStateChanged}
+              scrollEnabled={false}
+              style={styles.pagerView}
+            >
+              {pages}
+            </PagerView>
+          </Animated.View>
           <PlayHistoryOverlay />
         </View>
       </PanGestureHandler>
