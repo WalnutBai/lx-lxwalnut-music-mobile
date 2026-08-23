@@ -519,6 +519,10 @@ const Main = () => {
     const map: Partial<Record<NAV_ID_Type, ReturnType<typeof PanResponder.create>>> = {}
     for (const id of pageNavs) {
       map[id] = PanResponder.create({
+        onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
+          const { dx, dy } = gestureState
+          return Math.abs(dx) > Math.abs(dy) && dx > 12
+        },
         onMoveShouldSetPanResponder: (evt, gestureState) => {
           const { dx, dy } = gestureState
           return Math.abs(dx) > Math.abs(dy) && dx > 12
