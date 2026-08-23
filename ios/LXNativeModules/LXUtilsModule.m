@@ -7,6 +7,10 @@
 #import <arpa/inet.h>
 #import <ifaddrs.h>
 
+@interface LXUtilsModule ()
+@property (nonatomic, assign) BOOL lxWindowObserving;
+@end
+
 @implementation LXUtilsModule
 
 RCT_EXPORT_MODULE(UtilsModule)
@@ -18,7 +22,37 @@ RCT_EXPORT_MODULE(UtilsModule)
 #pragma mark - events
 
 - (NSArray<NSString *> *)supportedEvents {
-  return @[@"screen-state"];
+  return @[@"screen-state", @"screen-size-changed"];
+}
+
+- (NSDictionary *)lx_currentWindowSize {
+  CGRect bounds = UIScreen.mainScreen.bounds;
+  CGFloat scale = UIScreen.mainScreen.scale;
+  return @{
+    @"width": @(bounds.size.width * scale),
+    @"height": @(bounds.size.height * scale),
+  };
+}
+
+- (void)lx_startWindowObserving {
+  if (self.lxWindowObserving) return;
+  self.lxWindowObserving = YES;
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(lx_windowSizeChanged)
+                                               name:UIApplicationDidChangeStatusBarFrameNotification
+                                             object:nil];
+}
+
+- (void)lx_stopWindowObserving {
+  if (!self.lxWindowObserving) return;
+  self.lxWindowObserving = NO;
+  [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                  name:UIApplicationDidChangeStatusBarFrameNotification
+                                                object:nil];
+}
+
+- (void)lx_windowSizeChanged {
+  [self sendEventWithName:@"screen-size-changed" body:[self lx_currentWindowSize]];
 }
 
 - (void)startObserving {
@@ -30,6 +64,7 @@ RCT_EXPORT_MODULE(UtilsModule)
                                            selector:@selector(lx_appWillResignActive)
                                                name:UIApplicationWillResignActiveNotification
                                              object:nil];
+  [self lx_startWindowObserving];
 }
 
 - (void)stopObserving {
@@ -39,6 +74,7 @@ RCT_EXPORT_MODULE(UtilsModule)
   [[NSNotificationCenter defaultCenter] removeObserver:self
                                                   name:UIApplicationWillResignActiveNotification
                                                 object:nil];
+  [self lx_stopWindowObserving];
 }
 
 - (void)lx_appDidBecomeActive {
@@ -168,7 +204,8 @@ RCT_EXPORT_METHOD(adjustSystemMediaVolume:(NSString *)direction) {
 }
 
 RCT_EXPORT_METHOD(listenWindowSizeChanged) {
-  // Window size change observation is not implemented on iOS; no-op.
+  [self lx_startWindowObserving];
+  [self lx_windowSizeChanged];
 }
 
 #pragma mark - helpers

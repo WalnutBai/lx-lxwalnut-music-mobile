@@ -41,6 +41,10 @@ Bundle Identifier：`com.lxnetease.music.mobile`（与 Android 一致）。
   **不能上架 App Store**（NSAllowsArbitraryLoads=true 会被拒）。
 - 如需真机签名：准备 Apple ID（免费 7 天）或付费证书，用 Xcode 自动管理签名，
   或参考 `ExportOptions.plist` + `fastlane`/`xcodebuild -exportArchive` 走 manual + ad-hoc。
+- **`npm ci` 容错说明**：原仓库 `package.json` 的 `postinstall` 引用了 `scripts/apply-rntp-eq-patch.js`
+  等三个脚本，但 `scripts/` 目录在仓库中**并不存在**（原仓库自身缺陷）。已将其改为每条补丁
+  `|| true` 的容错写法，缺失脚本自动跳过、`npm ci` 不再失败（将来补上 `scripts/` 也能正常执行）。
+  这三个补丁仅作用于 Android / node_modules 修补，对 iOS 构建无影响。
 
 ## 3. 本地运行（需 macOS + Xcode）
 

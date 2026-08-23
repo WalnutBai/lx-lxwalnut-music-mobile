@@ -30,10 +30,14 @@ RCT_EXPORT_MODULE(MusicWidgetModule)
 #pragma mark - remote command center
 
 - (void)lx_configureRemoteCommandCenter {
-  if (_commandCenterConfigured) return;
-  _commandCenterConfigured = YES;
+  // Guard the check-then-set with a lock: startObserving runs on the main
+  // thread while updateWidget can be invoked from a background thread, so the
+  // naive BOOL guard could otherwise double-register command handlers.
+  @synchronized(self) {
+    if (_commandCenterConfigured) return;
+    _commandCenterConfigured = YES;
 
-  MPRemoteCommandCenter *cc = [MPRemoteCommandCenter sharedCommandCenter];
+    MPRemoteCommandCenter *cc = [MPRemoteCommandCenter sharedCommandCenter];
   __weak typeof(self) weakSelf = self;
   cc.playCommand.enabled = YES;
   cc.pauseCommand.enabled = YES;
@@ -56,6 +60,7 @@ RCT_EXPORT_MODULE(MusicWidgetModule)
     [weakSelf sendEventWithName:@"widget-prev" body:nil];
     return MPRemoteCommandHandlerStatusSuccess;
   }];
+  }
 }
 
 #pragma mark - exported methods

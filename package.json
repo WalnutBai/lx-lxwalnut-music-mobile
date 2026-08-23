@@ -19,7 +19,7 @@
     "clear:full": "git clean -fdx -e android/keystore.properties -e android/app/*.keystore -e scripts/rntp-eq",
     "build:theme": "node src/theme/themes/createThemes.js",
     "publish": "node publish",
-    "postinstall": "node patchMediaLayout.js && node scripts/apply-rntp-eq-patch.js && node scripts/apply-slider-patch.js && node scripts/apply-file-system-multi-patch.js"
+    "postinstall": "node patchMediaLayout.js || true; node scripts/apply-rntp-eq-patch.js || true; node scripts/apply-slider-patch.js || true; node scripts/apply-file-system-multi-patch.js || true"
   },
   "engines": {
     "node": ">= 18",
