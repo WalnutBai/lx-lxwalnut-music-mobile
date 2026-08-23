@@ -1,0 +1,54 @@
+name: Release Arm64
+
+on:
+  push:
+    branches:
+      - dev
+      - 'feature/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Android arm64-v8a Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v4
+
+      - name: Setup Env
+        uses: ./.github/actions/setup
+
+      - name: Build arm64-v8a Release
+        env:
+          DISABLE_SVG: 1
+        shell: bash
+        run: |
+          cd android
+          # 仓库未配置签名 secrets，CI 内生成临时 release keystore 自签名
+          keytool -genkeypair -v \
+            -keystore /tmp/release.keystore \
+            -alias release \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass release123 -keypass release123 \
+            -dname "CN=LX-Pro-Music, OU=Dev, O=Hoper, C=CN" \
+            > /tmp/keytool.log 2>&1
+          chmod +x ./gradlew
+          ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a \
+            -PMYAPP_UPLOAD_STORE_FILE='/tmp/release.keystore' \
+            -PMYAPP_UPLOAD_KEY_ALIAS='release' \
+            -PMYAPP_UPLOAD_STORE_PASSWORD='release123' \
+            -PMYAPP_UPLOAD_KEY_PASSWORD='release123'
+
+      - name: Get package version
+        id: package_version
+        shell: bash
+        run: |
+          PACKAGE_VERSION=$(node -p -e 'require("./package.json").version')
+          echo "PACKAGE_VERSION=${PACKAGE_VERSION}" >> "$GITHUB_ENV"
+          echo "package_version=${PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload arm64-v8a Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-v${{ env.PACKAGE_VERSION }}-arm64-v8a-release
+          path: android/app/build/outputs/apk/release/*-arm64-v8a.apk

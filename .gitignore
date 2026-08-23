@@ -75,3 +75,6 @@ lx-netease-music-mobile.zip
 # Local toolchain / secrets
 /.build-env/
 .github_key
+
+# GitCode 本地私有配置（不入库，模板见 src/utils/musicSdk/git/gitcode.private.example.js）
+src/utils/musicSdk/git/gitcode.private.js

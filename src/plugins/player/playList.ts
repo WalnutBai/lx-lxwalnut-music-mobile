@@ -9,9 +9,13 @@ import settingState from '@/store/setting/state'
 const list: LX.Player.Track[] = []
 
 const defaultUserAgent = 'Mozilla/5.0 (Linux; Android 10; Pixel 3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Mobile Safari/537.36'
+const biUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 const wyStreamHeaders = {
   Referer: 'https://music.163.com/',
   Origin: 'https://music.163.com',
+}
+const biStreamHeaders = {
+  Referer: 'https://www.bilibili.com/',
 }
 const httpRxp = /^(https?:\/\/.+|\/.+)/
 const wyMediaUrlRxp = /^https?:\/\/(?:[^/]+\.)?music\.126\.net\//
@@ -44,12 +48,15 @@ const getTrackSource = (musicInfo: LX.Player.PlayMusic) => {
 const getTrackHeaders = (musicInfo: LX.Player.PlayMusic, url?: string) => {
   if (!url || !/^https?:\/\//.test(url) || wyMediaUrlRxp.test(url)) return undefined
   const source = getTrackSource(musicInfo)
-  return source === 'wy' ? wyStreamHeaders : undefined
+  if (source === 'wy') return wyStreamHeaders
+  if (source === 'bi') return biStreamHeaders
+  return undefined
 }
 
 const getTrackUserAgent = (musicInfo: LX.Player.PlayMusic, url?: string) => {
   if (!url || !/^https?:\/\//.test(url)) return undefined
   if (getTrackSource(musicInfo) === 'wy' && wyMediaUrlRxp.test(url)) return ''
+  if (getTrackSource(musicInfo) === 'bi') return biUserAgent
   return defaultUserAgent
 }
 
