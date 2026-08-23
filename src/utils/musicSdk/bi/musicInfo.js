@@ -1,6 +1,7 @@
 /**
  * 小哔音乐取流逻辑
- * B 站视频 DASH 音频流 -> 播放 URL
+ * 优先使用 durl(fnval=0) 完整 MP4，TrackPlayer 兼容性最好；
+ * durl 不可用时降级 DASH 纯音频(m4s)。
  */
 import { biliFetch, getCid } from './util'
 
@@ -51,23 +52,21 @@ export const getMusicUrl = async (songInfo, type) => {
   const referer = `https://www.bilibili.com/video/${bvid}`
   const cid = await getCid(bvid)
 
-  // DASH 优先（fnval=16）
+  // 1. 优先 durl 完整 MP4（fnval=0），TrackPlayer 兼容性最好
+  const durlData = await biliFetch(`/x/player/playurl?fnval=0&bvid=${encodeURIComponent(bvid)}&cid=${cid}`, { referer })
+  if (durlData.code === 0 && durlData.data?.durl?.[0]?.url) {
+    const url = toHttps(durlData.data.durl[0].url)
+    return { url, type }
+  }
+  console.log('[bi] durl 无可用地址，降级 DASH')
+
+  // 2. 降级 DASH 纯音频（fnval=16）
   const data = await biliFetch(`/x/player/playurl?fnval=16&bvid=${encodeURIComponent(bvid)}&cid=${cid}`, { referer })
   if (data.code !== 0 || !data.data) {
     throw new Error(`获取播放地址失败: ${data.message || data.code}`)
   }
 
   let url = pickDashAudioUrl(data.data, type === '128k')
-
-  // DASH 无音轨时降级 durl (fnval=0)
-  if (!url) {
-    console.log('[bi] DASH 无音轨，降级 durl')
-    const durlData = await biliFetch(`/x/player/playurl?fnval=0&bvid=${encodeURIComponent(bvid)}&cid=${cid}`, { referer })
-    if (durlData.code !== 0 || !durlData.data) {
-      throw new Error(`获取播放地址失败: ${durlData.message || durlData.code}`)
-    }
-    url = durlData.data.durl?.[0]?.url
-  }
 
   if (!url) throw new Error('未获取到 B 站音频地址')
   url = toHttps(url)
