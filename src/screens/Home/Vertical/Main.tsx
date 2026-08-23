@@ -502,8 +502,7 @@ const SettingPage = () => {
   return visible ? component : null
 }
 
-const Main = () => {
-  const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null);
+const PageGestureWrapper = ({ children }: { children: ReactNode }) => {
   const touchStartRef = useRef({ x: 0, y: 0 });
 
   const handleTouchStart = useCallback((evt: any) => {
@@ -519,6 +518,21 @@ const Main = () => {
       global.app_event.changeMenuVisible(true)
     }
   }, [])
+
+  return (
+    <View
+      style={styles.pageStyle}
+      collapsable={false}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {children}
+    </View>
+  )
+}
+
+const Main = () => {
+  const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null);
   const [activeNavId, setActiveNavIdState] = useState(commonState.navActiveId)
   const navOrder = useSettingValue('common.navOrder'); // 获取菜单排序
 
@@ -621,19 +635,14 @@ const Main = () => {
     };
 
     return pageNavs.map(id => (
-      <View collapsable={false} key={id} style={styles.pageStyle}>
+      <PageGestureWrapper key={id}>
         {pageComponents[id] ?? null}
-      </View>
+      </PageGestureWrapper>
     ));
   }, [pageNavs]);
 
   return (
-    <View
-      style={styles.container}
-      collapsable={false}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
+    <View style={styles.container} collapsable={false}>
       <PagerView
         ref={pagerViewRef}
         initialPage={activeIndexRef.current}
