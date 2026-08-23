@@ -3,6 +3,7 @@ name: Release Arm64
 on:
   push:
     branches:
+      - dev
       - 'feature/**'
   workflow_dispatch:
 
